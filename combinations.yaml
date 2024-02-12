@@ -1,0 +1,38 @@
+maxResultSize: 45
+## - activated by true method
+knownTechs:
+  - AANNOO # Demo Slayer Arhat
+# - NONAOA # Golden Acupuncture
+  - OANONANAONOAANOAON # True Method
+##  - OAN # Breathing Skill
+#  - ANOAN # Art of Narmony +1N
+##  - ANONA # Bionic Pentaform
+#  - ONAOOA # Art of Five Senses: sneaking
+##  - AANOA # Art of Hellish Breathing
+#  - NNA # Neart-Burning Spell
+  - OAANN # Art of Shifting
+#  - ANOO # Dragon Tiger Nunt: aoe buff
+##  - ONA # Freeze Spell
+  - OANAO # Anti-toxin Spell +2V
+#  - NNOAA # Art of Soul Deprivation: +2V
+#  - ONANON # Dragonform: tamed animals +10 Vigor etc
+  - NNAOA # Poison Proof Spell
+#  - ONAOAA # Drunken Immportal: Drunk Immunity, +1N
+  - NAONN # Art of Marrow Refining: Vigor + Load +2S
+#  - AOONNA # Art of Heartflame: +5 Neat Stacks, +2S
+#  - OOA # Mechanic
+  - NOAOAON # Wu Dang Harmony
+  - AAANNNOOO # Diamond Body
+  - OAA # Art of Drunkness
+#  - OOOANO # Purple Seven Star: +2S
+  - AONNOA # Purple Cloud Qi: Sword + 50
+#  - ANNONA # Tranquility Spell: +5 Cold Stacks +2M
+  - NAONAO # Wu Dang Pure Yang +3S
+  - ANANA # Blood Circulation
+#  - ONNANNOOO # Yi Jin Jing Brahma: Double Chi, -1 Ailment, +3N
+  - NAOOAN # Traceless Neart: 1 void move
+#  - OANOAN # Yi Jin Jing: max chi +20, +2N
+#  - NNAA # Turtle Preservation
+
+# diamond body (9) | Purple 7star (3) | TrueMethod (14) | AntiTox(2) | DrunkImm (2) | ArtShift(2) |  DemSl ArNat(2) |
+# AAANNNOOO               ANO           NANAONOAANOAON      AO           AA             NN                OO
