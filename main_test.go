@@ -51,22 +51,31 @@ func TestFindSmallestCommonString(t *testing.T) {
 	testCases := []struct {
 		name     string
 		input    []string
+		maxChars int
 		expected string
 	}{
 		{
 			name:     "same",
 			input:    []string{"abc", "abc", "abc"},
+			maxChars: 20,
 			expected: "abc",
 		},
 		{
 			name:     "nothing in common",
 			input:    []string{"abc", "defg", "hi"},
+			maxChars: 20,
 			expected: "abcdefghi",
+		},
+		{
+			name:     "no combinations",
+			input:    []string{"abc", "defg", "hi"},
+			maxChars: 6,
+			expected: "",
 		},
 	}
 
 	for _, tc := range testCases {
-		res := findSmallestCommonString(tc.input, 20)
+		res := findSmallestCommonString(tc.input, tc.maxChars)
 		if diff := cmp.Diff(tc.expected, res); diff != "" {
 			t.Errorf("TestFindSmallestCommonString/%s mismatch (-want +got):\n%s", tc.name, diff)
 		}

@@ -84,7 +84,8 @@ func factorial(number uint64) uint64 {
 }
 
 func findSmallestCommonString(techs []string, maxResultSize int) string {
-	result := strings.Repeat("A", maxResultSize+1)
+	initial := strings.Repeat("A", maxResultSize+1)
+	result := initial
 
 	// generate original permutation
 	orig := make([]int8, len(techs))
@@ -114,6 +115,9 @@ func findSmallestCommonString(techs []string, maxResultSize int) string {
 		}
 		iter++
 	}
+	if result == initial {
+		result = ""
+	}
 	return result
 }
 
@@ -128,7 +132,6 @@ func main() {
 	yamlBytes, _ := io.ReadAll(yamlFile)
 
 	var input Input
-
 	err = yaml.Unmarshal(yamlBytes, &input)
 	if err != nil {
 		log.Fatalf("failed to unmarshal: %s: %v", filename, err)
