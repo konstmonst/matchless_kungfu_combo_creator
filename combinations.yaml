@@ -1,38 +1,37 @@
 maxResultSize: 45
 ## - activated by true method
-knownTechs:
-  - AANNOO # Demo Slayer Arhat
-# - NONAOA # Golden Acupuncture
-  - OANONANAONOAANOAON # True Method
-##  - OAN # Breathing Skill
-#  - ANOAN # Art of Narmony +1N
-##  - ANONA # Bionic Pentaform
-#  - ONAOOA # Art of Five Senses: sneaking
-##  - AANOA # Art of Hellish Breathing
-#  - NNA # Neart-Burning Spell
-  - OAANN # Art of Shifting
-#  - ANOO # Dragon Tiger Nunt: aoe buff
-##  - ONA # Freeze Spell
-  - OANAO # Anti-toxin Spell +2V
-#  - NNOAA # Art of Soul Deprivation: +2V
-#  - ONANON # Dragonform: tamed animals +10 Vigor etc
-  - NNAOA # Poison Proof Spell
-#  - ONAOAA # Drunken Immportal: Drunk Immunity, +1N
-  - NAONN # Art of Marrow Refining: Vigor + Load +2S
-#  - AOONNA # Art of Heartflame: +5 Neat Stacks, +2S
-#  - OOA # Mechanic
-  - NOAOAON # Wu Dang Harmony
-  - AAANNNOOO # Diamond Body
-  - OAA # Art of Drunkness
-#  - OOOANO # Purple Seven Star: +2S
-  - AONNOA # Purple Cloud Qi: Sword + 50
-#  - ANNONA # Tranquility Spell: +5 Cold Stacks +2M
-  - NAONAO # Wu Dang Pure Yang +3S
-  - ANANA # Blood Circulation
-#  - ONNANNOOO # Yi Jin Jing Brahma: Double Chi, -1 Ailment, +3N
-  - NAOOAN # Traceless Neart: 1 void move
-#  - OANOAN # Yi Jin Jing: max chi +20, +2N
-#  - NNAA # Turtle Preservation
-
-# diamond body (9) | Purple 7star (3) | TrueMethod (14) | AntiTox(2) | DrunkImm (2) | ArtShift(2) |  DemSl ArNat(2) |
-# AAANNNOOO               ANO           NANAONOAANOAON      AO           AA             NN                OO
+knownTechs: [
+  { id: DSA, v: "AANNOO", comment: "Demo Slayer Arhat: DMG of Sun Skills +50%", chiType: "H", chiValue: 1 },
+#  { id: CA, v: "NONAOA", comment: "Golden Acupuncture: Cure Ailments", chiType: "", chiValue: 0 },
+  { id: TM, v: "OANONANAONOAANOAON", comment: "True Method", chiType: "", chiValue: 0 },
+#  { id: AoH, v: "ANOAN", comment: "Art of Narmony: +10 Chi", chiType: "H", chiValue: 1 },
+#  { id: AoFS, v: "ONAOOA", comment: "Art of Five Senses: Sneaking +1000 Sense", chiType: "M", chiValue: 1 },
+#  { id: HBS, v: "NNA", comment: "Neart-Burning Spell  Chance to inflict heat", chiType: "S", chiValue: 1 },
+#  { id: AoS, v: "OAANN", comment: "Art of Shifting: 3xDMG - steal 1 move", chiType: "", chiValue: 0 },
+#  { id: DTH, v: "ANOO", comment: "Dragon Tiger Hunt: AoE Buff +10%", chiType: "", chiValue: 0 },
+  { id: ATS, v: "OANAO", comment: "Anti-toxin Spell, Cure Worm", chiType: "V", chiValue: 2 },
+#  { id: AoSD, v: "NNOAA", comment: "Art of Soul Deprivation: 5xDMG - misfortune", chiType: "V", chiValue: 2 },
+#  { id: DF, v: "ONANON", comment: "Dragonform: tamed animals +10 Vigor", chiType: "V", chiValue: 2 },
+  { id: PPS, v: "NNAOA", comment: "Poison Proof Spell: each debuff +5% Vigor", chiType: "V", chiValue: 1 },
+#  { id: DI, v: "ONAOAA", comment: "Drunken Immportal: Drunk Immunity", chiType: "H", chiValue: 1 },
+  { id: AoMR, v: "NAONN", comment: "Art of Marrow Refining: Vigor + Load", chiType: "S", chiValue: 2 },
+#  { id: AoHF, v: "AOONNA", comment: "Art of Heartflame: +5 Heat Stacks", chiType: "S", chiValue: 2 },
+#  { id: MECH, v: "OOA", comment: "Mechanic: Lockpicking Speed", chiType: "M", chiValue: 1 },
+#  { id: WDH, v: "NOAOAON", comment: "Wu Dang Harmony: 3 less moves +10%DMG", chiType: "H", chiValue: 2 },
+#  { id: DB, v: "AAANNNOOO", comment: "Diamond Body: 10 stacks of shield", chiType: "H", chiValue: 2 },
+#  { id: AoD, v: "OAA", comment: "Art of Drunkness: inflict Drunk", chiType: "H", chiValue: 1 },
+#  { id: PSS, v: "OOOANO", comment: "Purple Seven Star: 1 stack Stars/Flowers", chiType: "S", chiValue: 2 },
+  { id: PSS, v: "AONNOA", comment: "Purple Cloud Qi: Sword +50%", chiType: "", chiValue: 0 },
+#  { id: TS, v: "ANNONA", comment: "Tranquility Spell: +5 Cold Stacks", chiType: "M", chiValue: 2 },
+  { id: PSS, v: "NAONAO", comment: "Wu Dang Pure Yang: Antishock", chiType: "S", chiValue: 3 },
+  { id: BC, v: "ANANA", comment: "Blood Circulation: Spikes for Enery+Vigor/100", chiType: "", chiValue: 0 },
+#  { id: TS, v: "ONNANNOOO", comment: "Yi Jin Jing Brahma: Double Chi, -1 Ailment", chiType: "H", chiValue: 3 },
+  { id: TH, v: "NAOOAN", comment: "Traceless Neart: 1 void move", chiType: "", chiValue: 0 },
+#  { id: YJJ, v: "OANOAN", comment: "Yi Jin Jing: max chi +20", chiType: "H", chiValue: 3 },
+#  { id: TP, v: "NNAA", comment: "Turtle Preservation", chiType: "H", chiValue: 2 },
+# ----------- those are in True Method, so no point in including them ----- 
+# { id: BS , v: "OAN", comment: "Breathing Skill", chiType: "", chiValue: 0 },
+# { id: BP, v: "ANONA", comment: "Bionic Pentaform", chiType: "", chiValue: 0 },
+# { id: AoHB, v: "AANOA", comment: "Art of Hellish Breathing", chiType: "", chiValue: 0 },
+# { id: FS, v: "ONA", comment: "Freeze Spell", chiType: "M", chiValue: 1 }
+]

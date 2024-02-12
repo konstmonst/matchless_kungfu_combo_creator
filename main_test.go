@@ -6,7 +6,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestCombineTechs(t *testing.T) {
+func TestMergeStrings(t *testing.T) {
 	testCases := []struct {
 		name     string
 		a        string
@@ -40,7 +40,7 @@ func TestCombineTechs(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		res := combineTechs(tc.a, tc.b)
+		res := mergeStrings(tc.a, tc.b)
 		if diff := cmp.Diff(tc.expected, res); diff != "" {
 			t.Errorf("TestCombineTechs/%s mismatch (-want +got):\n%s", tc.name, diff)
 		}
@@ -48,29 +48,33 @@ func TestCombineTechs(t *testing.T) {
 }
 
 func TestFindSmallestCommonString(t *testing.T) {
+	techABC := Tech{V: "abc"}
+	techDEFG := Tech{V: "defg"}
+	techHI := Tech{V: "hi"}
+
 	testCases := []struct {
 		name     string
-		input    []string
+		input    []Tech
 		maxChars int
-		expected string
+		expected MergedTechs
 	}{
 		{
 			name:     "same",
-			input:    []string{"abc", "abc", "abc"},
+			input:    []Tech{techABC, techABC, techABC},
 			maxChars: 20,
-			expected: "abc",
+			expected: MergedTechs{Techs: []*Tech{&techABC, &techABC, &techABC}, Value: techABC.V},
 		},
 		{
-			name:     "nothing in common",
-			input:    []string{"abc", "defg", "hi"},
+			name:     "nothing is in common",
+			input:    []Tech{techABC, techDEFG, techHI},
 			maxChars: 20,
-			expected: "abcdefghi",
+			expected: MergedTechs{Techs: []*Tech{&techABC, &techDEFG, &techHI}, Value: "abcdefghi"},
 		},
 		{
 			name:     "no combinations",
-			input:    []string{"abc", "defg", "hi"},
+			input:    []Tech{techABC, techDEFG, techHI},
 			maxChars: 6,
-			expected: "",
+			expected: MergedTechs{},
 		},
 	}
 
