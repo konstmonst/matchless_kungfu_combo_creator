@@ -6,41 +6,41 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestMergeStrings(t *testing.T) {
+func TestCalcMergePos(t *testing.T) {
 	testCases := []struct {
 		name     string
 		a        string
 		b        string
-		expected string
+		expected int
 	}{
 		{
 			name:     "same",
 			a:        "abc",
 			b:        "abc",
-			expected: "abc",
+			expected: 0,
 		},
 		{
 			name:     "nothing in common",
 			a:        "abc",
 			b:        "def",
-			expected: "abcdef",
+			expected: 3,
 		},
 		{
 			name:     "one char in common",
 			a:        "abc",
 			b:        "cde",
-			expected: "abcde",
+			expected: 2,
 		},
 		{
 			name:     "two chars in common",
 			a:        "abc",
 			b:        "bcd",
-			expected: "abcd",
+			expected: 1,
 		},
 	}
 
 	for _, tc := range testCases {
-		res := mergeStrings(tc.a, tc.b)
+		res := calcMergePos(tc.a, tc.b)
 		if diff := cmp.Diff(tc.expected, res); diff != "" {
 			t.Errorf("TestCombineTechs/%s mismatch (-want +got):\n%s", tc.name, diff)
 		}
@@ -48,37 +48,46 @@ func TestMergeStrings(t *testing.T) {
 }
 
 func TestFindSmallestCommonString(t *testing.T) {
-	techABC := Tech{V: "abc"}
-	techDEFG := Tech{V: "defg"}
-	techHI := Tech{V: "hi"}
+	techABC := Inner{V: "abc"}
+	techDEFG := Inner{V: "defg"}
+	techHI := Inner{V: "hi"}
 
 	testCases := []struct {
 		name     string
-		input    []Tech
+		input    []Inner
 		maxChars int
-		expected MergedTechs
+		expected MergedInners
 	}{
 		{
-			name:     "same",
-			input:    []Tech{techABC, techABC, techABC},
+			name:     "nothing is in common",
+			input:    []Inner{techABC, techDEFG, techHI},
 			maxChars: 20,
-			expected: MergedTechs{Techs: []*Tech{&techABC, &techABC, &techABC}, Value: techABC.V},
+			expected: MergedInners{
+				InnerIndices: []int{0, 1, 2},
+				MergePos:     []int{0, 3, 4},
+				CachedValue:  "abcdefghi",
+			},
 		},
 		{
-			name:     "nothing is in common",
-			input:    []Tech{techABC, techDEFG, techHI},
+			name:     "same",
+			input:    []Inner{techABC, techABC, techABC},
 			maxChars: 20,
-			expected: MergedTechs{Techs: []*Tech{&techABC, &techDEFG, &techHI}, Value: "abcdefghi"},
+			expected: MergedInners{
+				InnerIndices: []int{0, 1, 2},
+				MergePos:     []int{0, 0, 0},
+				CachedValue:  techABC.V,
+			},
 		},
 		{
 			name:     "no combinations",
-			input:    []Tech{techABC, techDEFG, techHI},
+			input:    []Inner{techABC, techDEFG, techHI},
 			maxChars: 6,
-			expected: MergedTechs{},
+			expected: MergedInners{},
 		},
 	}
 
 	for _, tc := range testCases {
+		mergeCache = map[uint]int{}
 		res := findSmallestCommonString(tc.input, tc.maxChars)
 		if diff := cmp.Diff(tc.expected, res); diff != "" {
 			t.Errorf("TestFindSmallestCommonString/%s mismatch (-want +got):\n%s", tc.name, diff)

@@ -1,8 +1,8 @@
 maxResultSize: 45
 ## - activated by true method
-knownTechs: [
+knownInners: [
   { id: DSA, v: "AANNOO", comment: "Demo Slayer Arhat: DMG of Sun Skills +50%", chiType: "H", chiValue: 1 },
-#  { id: CA, v: "NONAOA", comment: "Golden Acupuncture: Cure Ailments", chiType: "", chiValue: 0 },
+  { id: GA, v: "NONAOA", comment: "Golden Acupuncture: Cure Ailments", chiType: "", chiValue: 0 },
   { id: TM, v: "OANONANAONOAANOAON", comment: "True Method", chiType: "", chiValue: 0 },
 #  { id: AoH, v: "ANOAN", comment: "Art of Narmony: +10 Chi", chiType: "H", chiValue: 1 },
 #  { id: AoFS, v: "ONAOOA", comment: "Art of Five Senses: Sneaking +1000 Sense", chiType: "M", chiValue: 1 },

@@ -8,10 +8,15 @@ import (
 	"strconv"
 	"strings"
 
+	"gonum.org/v1/gonum/stat/combin"
 	"gopkg.in/yaml.v3"
 )
 
-type Tech struct {
+var (
+	mergeCache map[uint]int = map[uint]int{}
+)
+
+type Inner struct {
 	ID       string `yaml:"id"`
 	V        string `yaml:"v"`
 	Comment  string `yaml:"comment"`
@@ -19,36 +24,57 @@ type Tech struct {
 	ChiValue int    `yaml:"chiValue"`
 }
 
-type Input struct {
-	MaxResultSize int    `yaml:"maxResultSize"`
-	KnownTechs    []Tech `yaml:"knownTechs"`
+type MergedInners struct {
+	InnerIndices []int
+	MergePos     []int
+	CachedValue  string
 }
 
-type MergedTechs struct {
-	Techs []*Tech
-	Value string
+func (m *MergedInners) LastIndex() uint {
+	return uint(m.InnerIndices[len(m.InnerIndices)-1])
 }
 
-func (m *MergedTechs) Merge(tech *Tech) {
-	m.Techs = append(m.Techs, tech)
-	m.Value = mergeStrings(m.Value, tech.V)
+func (m *MergedInners) Merge(inners []Inner, index int) {
+	var (
+		pos   int
+		found bool
+	)
+
+	if len(m.InnerIndices) > 0 {
+		key := (m.LastIndex() << 8) | uint(index)
+		pos, found = mergeCache[key]
+		if !found {
+			pos = calcMergePos(inners[m.LastIndex()].V, inners[index].V)
+			mergeCache[key] = pos
+		}
+		lenA := int(len(inners[m.LastIndex()].V))
+		lenB := int(len(inners[index].V))
+		if pos+lenB-1 > lenA {
+			m.CachedValue += inners[index].V[lenA-pos:]
+		}
+		m.MergePos = append(m.MergePos, pos)
+	} else {
+		m.CachedValue = inners[index].V
+		m.MergePos = []int{pos}
+	}
+	m.InnerIndices = append(m.InnerIndices, index)
 }
 
-func (m *MergedTechs) IsBetterThan(other *MergedTechs) bool {
-	return len(m.Value) < len(other.Value)
+func (m *MergedInners) IsBetterThan(other *MergedInners) bool {
+	return len(other.CachedValue) == 0 || len(m.CachedValue) < len(other.CachedValue)
 }
 
-func (m *MergedTechs) String() string {
+func (m *MergedInners) String(inners []Inner) string {
 	chiValues := map[string]int{}
 	var sb strings.Builder
-	for i, tech := range m.Techs {
+	for i, index := range m.InnerIndices {
 		if i > 0 {
 			sb.WriteByte(' ')
 		}
-		sb.WriteString(tech.ID)
-		if len(tech.ChiType) > 0 {
-			oldVal := chiValues[tech.ChiType]
-			chiValues[tech.ChiType] = oldVal + tech.ChiValue
+		sb.WriteString(inners[index].ID)
+		if len(inners[index].ChiType) > 0 {
+			oldVal := chiValues[inners[index].ChiType]
+			chiValues[inners[index].ChiType] = oldVal + inners[index].ChiValue
 		}
 	}
 
@@ -65,7 +91,7 @@ func (m *MergedTechs) String() string {
 	}
 
 	sb.WriteByte('\n')
-	for i, rune := range m.Value {
+	for i, rune := range m.CachedValue {
 		sb.WriteRune(rune)
 		if i > 0 && i%5 == 0 {
 			sb.WriteRune(' ')
@@ -75,65 +101,25 @@ func (m *MergedTechs) String() string {
 	return sb.String()
 }
 
-// https://stackoverflow.com/questions/30226438/generate-all-permutations-in-go
-// The slice p keeps the intermediate state as offsets in a Fisher-Yates shuffle algorithm.
-// This has the nice property that the zero value for p describes the identity permutation.
-func nextPerm(p []int8) {
-	for i := int8(len(p)) - 1; i >= 0; i-- {
-		if i == 0 || p[i] < int8(len(p))-i-1 {
-			p[i]++
-			return
-		}
-		p[i] = 0
-	}
-}
+func calcMergePos(a, b string) int {
+	lenA := int(len(a))
+	lenB := int(len(b))
 
-func getPerm(orig, p []int8) []int8 {
-	result := append([]int8{}, orig...)
-	for z, v := range p {
-		i := int8(z)
-		result[i], result[i+v] = result[i+v], result[i]
-	}
-	return result
-}
-
-/*
-func main() {
-    orig := []int{11, 22, 33}
-    for p := make([]int, len(orig)); p[0] < len(p); nextPerm(p) {
-        fmt.Println(getPerm(orig, p))
-    }
-}*/
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func mergeStrings(a, b string) string {
-	for i := 0; i < len(a); i++ {
-		j := 0
-		for j < len(b) && i+j < len(a) && a[i+j] == b[j] {
+	for mergeAt := int(0); mergeAt < lenA; mergeAt++ {
+		j := int(0)
+		for j < lenB && mergeAt+j < lenA && a[mergeAt+j] == b[j] {
 			j++
 		}
-		// b i in a
-		if j == len(b) {
-			return a
+		// b is completely in a
+		if j == lenB {
+			return mergeAt
 		}
-		if i+j == len(a) {
-			return a + b[j:]
+		// part of b at the end of a
+		if mergeAt+j == lenA {
+			return mergeAt
 		}
 	}
-	return a + b
-}
-
-func mergeTechs(a, b Tech) Tech {
-	return Tech{
-		ID: "A",
-		V:  mergeStrings(a.V, b.V),
-	}
+	return lenA
 }
 
 func factorial(number uint64) uint64 {
@@ -150,29 +136,26 @@ func factorial(number uint64) uint64 {
 	return fact
 }
 
-func findSmallestCommonString(techs []Tech, maxResultSize int) MergedTechs {
-	initial := MergedTechs{Value: strings.Repeat("A", maxResultSize+1)}
+func findSmallestCommonString(inners []Inner, maxResultSize int) MergedInners {
+	var initial MergedInners
 	result := initial
+	numInners := len(inners)
 
-	// generate original permutation
-	orig := make([]int8, len(techs))
-	for i := int8(0); i < int8(len(orig)); i++ {
-		orig[i] = i
-	}
-
-	numIterations := factorial(uint64(len(orig)))
+	numIterations := factorial(uint64(numInners))
 	iter := uint64(0)
 	lastProgres := uint64(0)
 
-	for p := make([]int8, len(orig)); p[0] < int8(len(p)); nextPerm(p) {
-		v := getPerm(orig, p)
-		var tech MergedTechs
-		for i := 0; i < len(v); i++ {
-			tech.Merge(&techs[v[i]])
+	permGen := combin.NewPermutationGenerator(numInners, numInners)
+	p := make([]int, numInners)
+	for permGen.Next() {
+		permGen.Permutation(p)
+		var inner MergedInners
+		for i := 0; i < numInners; i++ {
+			inner.Merge(inners, p[i])
 		}
-		if tech.IsBetterThan(&result) {
-			fmt.Printf("new result: %v\n", tech.String())
-			result = tech
+		if inner.IsBetterThan(&result) {
+			fmt.Printf("new result: %v\n", inner.String(inners))
+			result = inner
 		}
 
 		progress := iter * uint64(100) / numIterations
@@ -182,8 +165,8 @@ func findSmallestCommonString(techs []Tech, maxResultSize int) MergedTechs {
 		}
 		iter++
 	}
-	if len(result.Techs) == 0 {
-		result.Value = ""
+	if len(result.InnerIndices) == 0 {
+		result.CachedValue = ""
 	}
 	return result
 }
@@ -198,17 +181,21 @@ func main() {
 
 	yamlBytes, _ := io.ReadAll(yamlFile)
 
-	var input Input
+	var input struct {
+		MaxResultSize int     `yaml:"maxResultSize"`
+		KnownInners   []Inner `yaml:"knownInners"`
+	}
+
 	err = yaml.Unmarshal(yamlBytes, &input)
 	if err != nil {
 		log.Fatalf("failed to unmarshal: %s: %v", filename, err)
 	}
 
-	if len(input.KnownTechs) == 0 {
+	if len(input.KnownInners) == 0 {
 		log.Fatalf("no known techs provided in %s file", filename)
 	}
 
-	if len(input.KnownTechs) > 21 {
+	if len(input.KnownInners) > 21 {
 		log.Fatalf("only max 21 techs at once are supported by now")
 	}
 
@@ -216,8 +203,8 @@ func main() {
 		log.Fatalf("only max string of 127 chars can be computed by now")
 	}
 
-	log.Printf("input(%d): %v", len(input.KnownTechs), input)
+	log.Printf("input(%d): %v", len(input.KnownInners), input)
 
-	result := findSmallestCommonString(input.KnownTechs, int(input.MaxResultSize))
-	fmt.Printf("result of size %d: %v\n", len(result.Value), result.String())
+	result := findSmallestCommonString(input.KnownInners, int(input.MaxResultSize))
+	fmt.Printf("result of size %d: %v\n", len(result.CachedValue), result.String(input.KnownInners))
 }
