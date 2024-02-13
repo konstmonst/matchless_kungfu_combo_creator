@@ -16,9 +16,10 @@ import (
 )
 
 var (
-	mergeCache map[uint]int = map[uint]int{}
-	cpuprofile              = flag.String("cpuprofile", "", "write cpu profile to file")
-	filename                = flag.String("filename", "combinations.yaml", "yaml file with combinations")
+	mergeCache       map[uint]int
+	enableMergeCache = flag.Bool("enableMergeCache", true, "enables merge cache")
+	cpuprofile       = flag.String("cpuprofile", "", "write cpu profile to file")
+	filename         = flag.String("filename", "combinations.yaml", "yaml file with combinations")
 )
 
 type Inner struct {
@@ -47,11 +48,15 @@ func (m *MergedInners) Merge(inners []Inner, index int) {
 	)
 
 	if len(m.InnerIndices) > 0 {
-		key := (m.LastIndex() << 16) | uint(index)
-		pos, found = mergeCache[key]
-		if !found {
+		if mergeCache != nil {
+			key := (m.LastIndex() << 16) | uint(index)
+			pos, found = mergeCache[key]
+			if !found {
+				pos = calcMergePos(inners[m.LastIndex()].Bytes, inners[index].Bytes)
+				mergeCache[key] = pos
+			}
+		} else {
 			pos = calcMergePos(inners[m.LastIndex()].Bytes, inners[index].Bytes)
-			mergeCache[key] = pos
 		}
 		lenA := int(len(inners[m.LastIndex()].Bytes))
 		lenB := int(len(inners[index].Bytes))
@@ -186,7 +191,9 @@ func main() {
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
-
+	if *enableMergeCache {
+		mergeCache = make(map[uint]int)
+	}
 	yamlFile, err := os.Open(*filename)
 	if err != nil {
 		log.Fatalf("failed to open %s: %v", *filename, err)
