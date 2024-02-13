@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"gonum.org/v1/gonum/stat/combin"
 	"gopkg.in/yaml.v3"
@@ -41,7 +42,7 @@ func (m *MergedInners) Merge(inners []Inner, index int) {
 	)
 
 	if len(m.InnerIndices) > 0 {
-		key := (m.LastIndex() << 8) | uint(index)
+		key := (m.LastIndex() << 16) | uint(index)
 		pos, found = mergeCache[key]
 		if !found {
 			pos = calcMergePos(inners[m.LastIndex()].V, inners[index].V)
@@ -203,8 +204,15 @@ func main() {
 		log.Fatalf("only max string of 127 chars can be computed by now")
 	}
 
-	log.Printf("input(%d): %v", len(input.KnownInners), input)
+	for _, inner := range input.KnownInners {
+		if len(inner.V) > (1<<16)-1 {
+			log.Fatalf("inner to long for calculation")
+		}
+	}
 
+	log.Printf("input(%d): %v", len(input.KnownInners), input)
+	startAt := time.Now()
 	result := findSmallestCommonString(input.KnownInners, int(input.MaxResultSize))
+	fmt.Printf("calculation took %v\n", time.Since(startAt))
 	fmt.Printf("result of size %d: %v\n", len(result.CachedValue), result.String(input.KnownInners))
 }
