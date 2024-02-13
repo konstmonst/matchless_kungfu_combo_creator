@@ -70,7 +70,7 @@ func TestFindSmallestCommonString(t *testing.T) {
 			maxChars: 20,
 			expected: MergedInners{
 				InnerIndices: []int{0, 1, 2},
-				MergePos:     []int{0, 3, 4},
+				MergePos:     []int{0, 3, 7},
 				CachedValue:  []byte("abcdefghi"),
 			},
 		},

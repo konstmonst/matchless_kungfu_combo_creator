@@ -61,16 +61,18 @@ func (m *MergedInners) Merge(inners []Inner, index int) {
 		}
 		lenA := int(len(inners[m.LastIndex()].Bytes))
 		lenB := int(len(inners[index].Bytes))
+		m.MergePos = append(m.MergePos, len(m.CachedValue)-lenA+pos)
 		if pos+lenB-1 > lenA {
 			m.CachedValue = append(m.CachedValue, inners[index].Bytes[lenA-pos:]...)
 		}
+
 	} else {
 		m.MergePos = make([]int, 0, len(inners))
+		m.MergePos = append(m.MergePos, 0)
 		m.InnerIndices = make([]int, 0, len(inners))
 		m.CachedValue = make([]byte, 0, 255)
 		m.CachedValue = append(m.CachedValue, inners[index].Bytes...)
 	}
-	m.MergePos = append(m.MergePos, pos)
 	m.InnerIndices = append(m.InnerIndices, index)
 }
 
@@ -81,18 +83,29 @@ func (m *MergedInners) IsBetterThan(other *MergedInners) bool {
 func (m *MergedInners) String(inners []Inner, wordSize int) string {
 	chiValues := map[string]int{}
 	var sb strings.Builder
+	sb.WriteString("Inners: ")
 	for i, index := range m.InnerIndices {
 		if i > 0 {
-			sb.WriteByte(' ')
+			sb.WriteString(", ")
 		}
 		sb.WriteString(inners[index].ID)
+		sb.WriteString(fmt.Sprintf(" at %d", m.MergePos[i]))
+
 		if len(inners[index].ChiType) > 0 {
 			oldVal := chiValues[inners[index].ChiType]
 			chiValues[inners[index].ChiType] = oldVal + inners[index].ChiValue
 		}
 	}
 
-	sb.WriteString(" Chi Values: ")
+	sb.WriteByte('\n')
+	for i, byte := range m.CachedValue {
+		if i > 0 && i%wordSize == 0 {
+			sb.WriteByte(' ')
+		}
+		sb.WriteByte(byte)
+	}
+
+	sb.WriteString("\nChi Values: ")
 	j := 0
 	for chiType, chiValue := range chiValues {
 		if j > 0 {
@@ -102,14 +115,6 @@ func (m *MergedInners) String(inners []Inner, wordSize int) string {
 		sb.WriteString(strconv.FormatInt(int64(chiValue), 10))
 		sb.WriteString(chiType)
 		j++
-	}
-
-	sb.WriteByte('\n')
-	for i, byte := range m.CachedValue {
-		if i > 0 && i%wordSize == 0 {
-			sb.WriteByte(' ')
-		}
-		sb.WriteByte(byte)
 	}
 
 	return sb.String()
@@ -236,5 +241,5 @@ func main() {
 	startAt := time.Now()
 	result := findSmallestCommonString(input.KnownInners, int(input.MaxResultSize))
 	fmt.Printf("calculation took %v\n", time.Since(startAt))
-	fmt.Printf("result of size %d: %v\n", len(result.CachedValue), result.String(input.KnownInners, *wordSize))
+	fmt.Printf("result of size %d:\n%v\n", len(result.CachedValue), result.String(input.KnownInners, *wordSize))
 }

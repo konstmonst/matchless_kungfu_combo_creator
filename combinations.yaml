@@ -29,8 +29,8 @@ knownInners: [
   { id: TH, v: "NAOOAN", comment: "Traceless Neart: 1 void move", chiType: "", chiValue: 0 },
 #  { id: YJJ, v: "OANOAN", comment: "Yi Jin Jing: max chi +20", chiType: "H", chiValue: 3 },
 #  { id: TP, v: "NNAA", comment: "Turtle Preservation", chiType: "H", chiValue: 2 },
-  { id: LIH, v: "OOAN", comment: "Lotus in Heart", chiType: "", chiValue: 0 },
-
+#  { id: LIH, v: "OOAN", comment: "Lotus in Heart", chiType: "", chiValue: 0 },
+#  { id: LIH, v: "OOAONO", comment: "Stars Divine", chiType: "", chiValue: 0 },
 # ----------- those are in True Method, so no point in including them ----- 
 # { id: BS , v: "OAN", comment: "Breathing Skill", chiType: "", chiValue: 0 },
 # { id: BP, v: "ANONA", comment: "Bionic Pentaform", chiType: "", chiValue: 0 },
