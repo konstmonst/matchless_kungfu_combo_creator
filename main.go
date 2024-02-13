@@ -20,6 +20,7 @@ var (
 	enableMergeCache = flag.Bool("enableMergeCache", true, "enables merge cache")
 	cpuprofile       = flag.String("cpuprofile", "", "write cpu profile to file")
 	filename         = flag.String("filename", "combinations.yaml", "yaml file with combinations")
+	wordSize         = flag.Int("wordSize", 5, "max characters in a word wwhen splitting result string")
 )
 
 type Inner struct {
@@ -77,7 +78,7 @@ func (m *MergedInners) IsBetterThan(other *MergedInners) bool {
 	return len(m.CachedValue) < len(other.CachedValue)
 }
 
-func (m *MergedInners) String(inners []Inner) string {
+func (m *MergedInners) String(inners []Inner, wordSize int) string {
 	chiValues := map[string]int{}
 	var sb strings.Builder
 	for i, index := range m.InnerIndices {
@@ -106,7 +107,7 @@ func (m *MergedInners) String(inners []Inner) string {
 	sb.WriteByte('\n')
 	for i, byte := range m.CachedValue {
 		sb.WriteByte(byte)
-		if i > 0 && i%5 == 0 {
+		if i > 0 && i%wordSize == 0 {
 			sb.WriteRune(' ')
 		}
 	}
@@ -165,7 +166,7 @@ func findSmallestCommonString(inners []Inner, maxResultSize int) MergedInners {
 			inner.Merge(inners, p[i])
 		}
 		if len(inner.CachedValue) <= maxResultSize && (result.CachedValue == nil || inner.IsBetterThan(&result)) {
-			fmt.Printf("new result: %v\n", inner.String(inners))
+			fmt.Printf("new result: %v\n", inner.String(inners, *wordSize))
 			result = inner
 		}
 
@@ -235,5 +236,5 @@ func main() {
 	startAt := time.Now()
 	result := findSmallestCommonString(input.KnownInners, int(input.MaxResultSize))
 	fmt.Printf("calculation took %v\n", time.Since(startAt))
-	fmt.Printf("result of size %d: %v\n", len(result.CachedValue), result.String(input.KnownInners))
+	fmt.Printf("result of size %d: %v\n", len(result.CachedValue), result.String(input.KnownInners, *wordSize))
 }
