@@ -40,7 +40,7 @@ func TestCalcMergePos(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		res := calcMergePos(tc.a, tc.b)
+		res := calcMergePos([]byte(tc.a), []byte(tc.b))
 		if diff := cmp.Diff(tc.expected, res); diff != "" {
 			t.Errorf("TestCombineTechs/%s mismatch (-want +got):\n%s", tc.name, diff)
 		}
@@ -48,9 +48,9 @@ func TestCalcMergePos(t *testing.T) {
 }
 
 func TestFindSmallestCommonString(t *testing.T) {
-	techABC := Inner{V: "abc"}
-	techDEFG := Inner{V: "defg"}
-	techHI := Inner{V: "hi"}
+	techABC := Inner{Bytes: []byte("abc")}
+	techDEFG := Inner{Bytes: []byte("defg")}
+	techHI := Inner{Bytes: []byte("hi")}
 
 	testCases := []struct {
 		name     string
@@ -59,13 +59,19 @@ func TestFindSmallestCommonString(t *testing.T) {
 		expected MergedInners
 	}{
 		{
+			name:     "no combinations",
+			input:    []Inner{techABC, techDEFG, techHI},
+			maxChars: 6,
+			expected: MergedInners{},
+		},
+		{
 			name:     "nothing is in common",
 			input:    []Inner{techABC, techDEFG, techHI},
 			maxChars: 20,
 			expected: MergedInners{
 				InnerIndices: []int{0, 1, 2},
 				MergePos:     []int{0, 3, 4},
-				CachedValue:  "abcdefghi",
+				CachedValue:  []byte("abcdefghi"),
 			},
 		},
 		{
@@ -75,14 +81,8 @@ func TestFindSmallestCommonString(t *testing.T) {
 			expected: MergedInners{
 				InnerIndices: []int{0, 1, 2},
 				MergePos:     []int{0, 0, 0},
-				CachedValue:  techABC.V,
+				CachedValue:  techABC.Bytes,
 			},
-		},
-		{
-			name:     "no combinations",
-			input:    []Inner{techABC, techDEFG, techHI},
-			maxChars: 6,
-			expected: MergedInners{},
 		},
 	}
 

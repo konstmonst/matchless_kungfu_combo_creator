@@ -2,7 +2,7 @@ maxResultSize: 45
 ## - activated by true method
 knownInners: [
   { id: DSA, v: "AANNOO", comment: "Demo Slayer Arhat: DMG of Sun Skills +50%", chiType: "H", chiValue: 1 },
-  { id: GA, v: "NONAOA", comment: "Golden Acupuncture: Cure Ailments", chiType: "", chiValue: 0 },
+#  { id: CA, v: "NONAOA", comment: "Golden Acupuncture: Cure Ailments", chiType: "", chiValue: 0 },
   { id: TM, v: "OANONANAONOAANOAON", comment: "True Method", chiType: "", chiValue: 0 },
 #  { id: AoH, v: "ANOAN", comment: "Art of Narmony: +10 Chi", chiType: "H", chiValue: 1 },
 #  { id: AoFS, v: "ONAOOA", comment: "Art of Five Senses: Sneaking +1000 Sense", chiType: "M", chiValue: 1 },
@@ -13,7 +13,7 @@ knownInners: [
 #  { id: AoSD, v: "NNOAA", comment: "Art of Soul Deprivation: 5xDMG - misfortune", chiType: "V", chiValue: 2 },
 #  { id: DF, v: "ONANON", comment: "Dragonform: tamed animals +10 Vigor", chiType: "V", chiValue: 2 },
   { id: PPS, v: "NNAOA", comment: "Poison Proof Spell: each debuff +5% Vigor", chiType: "V", chiValue: 1 },
-  { id: DI, v: "ONAOAA", comment: "Drunken Immportal: Drunk Immunity", chiType: "H", chiValue: 1 },
+#  { id: DI, v: "ONAOAA", comment: "Drunken Immportal: Drunk Immunity", chiType: "H", chiValue: 1 },
   { id: AoMR, v: "NAONN", comment: "Art of Marrow Refining: Vigor + Load", chiType: "S", chiValue: 2 },
 #  { id: AoHF, v: "AOONNA", comment: "Art of Heartflame: +5 Heat Stacks", chiType: "S", chiValue: 2 },
 #  { id: MECH, v: "OOA", comment: "Mechanic: Lockpicking Speed", chiType: "M", chiValue: 1 },

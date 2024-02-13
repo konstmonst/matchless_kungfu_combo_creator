@@ -1,10 +1,12 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +17,8 @@ import (
 
 var (
 	mergeCache map[uint]int = map[uint]int{}
+	cpuprofile              = flag.String("cpuprofile", "", "write cpu profile to file")
+	filename                = flag.String("filename", "combinations.yaml", "yaml file with combinations")
 )
 
 type Inner struct {
@@ -23,12 +27,13 @@ type Inner struct {
 	Comment  string `yaml:"comment"`
 	ChiType  string `yaml:"chiType"`
 	ChiValue int    `yaml:"chiValue"`
+	Bytes    []byte
 }
 
 type MergedInners struct {
 	InnerIndices []int
 	MergePos     []int
-	CachedValue  string
+	CachedValue  []byte
 }
 
 func (m *MergedInners) LastIndex() uint {
@@ -45,24 +50,26 @@ func (m *MergedInners) Merge(inners []Inner, index int) {
 		key := (m.LastIndex() << 16) | uint(index)
 		pos, found = mergeCache[key]
 		if !found {
-			pos = calcMergePos(inners[m.LastIndex()].V, inners[index].V)
+			pos = calcMergePos(inners[m.LastIndex()].Bytes, inners[index].Bytes)
 			mergeCache[key] = pos
 		}
-		lenA := int(len(inners[m.LastIndex()].V))
-		lenB := int(len(inners[index].V))
+		lenA := int(len(inners[m.LastIndex()].Bytes))
+		lenB := int(len(inners[index].Bytes))
 		if pos+lenB-1 > lenA {
-			m.CachedValue += inners[index].V[lenA-pos:]
+			m.CachedValue = append(m.CachedValue, inners[index].Bytes[lenA-pos:]...)
 		}
-		m.MergePos = append(m.MergePos, pos)
 	} else {
-		m.CachedValue = inners[index].V
-		m.MergePos = []int{pos}
+		m.MergePos = make([]int, 0, len(inners))
+		m.InnerIndices = make([]int, 0, len(inners))
+		m.CachedValue = make([]byte, 0, 255)
+		m.CachedValue = append(m.CachedValue, inners[index].Bytes...)
 	}
+	m.MergePos = append(m.MergePos, pos)
 	m.InnerIndices = append(m.InnerIndices, index)
 }
 
 func (m *MergedInners) IsBetterThan(other *MergedInners) bool {
-	return len(other.CachedValue) == 0 || len(m.CachedValue) < len(other.CachedValue)
+	return len(m.CachedValue) < len(other.CachedValue)
 }
 
 func (m *MergedInners) String(inners []Inner) string {
@@ -92,8 +99,8 @@ func (m *MergedInners) String(inners []Inner) string {
 	}
 
 	sb.WriteByte('\n')
-	for i, rune := range m.CachedValue {
-		sb.WriteRune(rune)
+	for i, byte := range m.CachedValue {
+		sb.WriteByte(byte)
 		if i > 0 && i%5 == 0 {
 			sb.WriteRune(' ')
 		}
@@ -102,12 +109,12 @@ func (m *MergedInners) String(inners []Inner) string {
 	return sb.String()
 }
 
-func calcMergePos(a, b string) int {
-	lenA := int(len(a))
-	lenB := int(len(b))
+func calcMergePos(a, b []byte) int {
+	lenA := len(a)
+	lenB := len(b)
 
-	for mergeAt := int(0); mergeAt < lenA; mergeAt++ {
-		j := int(0)
+	for mergeAt := 0; mergeAt < lenA; mergeAt++ {
+		j := 0
 		for j < lenB && mergeAt+j < lenA && a[mergeAt+j] == b[j] {
 			j++
 		}
@@ -138,23 +145,21 @@ func factorial(number uint64) uint64 {
 }
 
 func findSmallestCommonString(inners []Inner, maxResultSize int) MergedInners {
-	var initial MergedInners
-	result := initial
+	var result MergedInners
 	numInners := len(inners)
 
 	numIterations := factorial(uint64(numInners))
-	iter := uint64(0)
 	lastProgres := uint64(0)
 
 	permGen := combin.NewPermutationGenerator(numInners, numInners)
 	p := make([]int, numInners)
-	for permGen.Next() {
+	for iter := uint64(0); permGen.Next(); iter++ {
 		permGen.Permutation(p)
 		var inner MergedInners
 		for i := 0; i < numInners; i++ {
 			inner.Merge(inners, p[i])
 		}
-		if inner.IsBetterThan(&result) {
+		if len(inner.CachedValue) <= maxResultSize && (result.CachedValue == nil || inner.IsBetterThan(&result)) {
 			fmt.Printf("new result: %v\n", inner.String(inners))
 			result = inner
 		}
@@ -164,19 +169,27 @@ func findSmallestCommonString(inners []Inner, maxResultSize int) MergedInners {
 			log.Printf("%d%% done\n", progress)
 			lastProgres = progress
 		}
-		iter++
 	}
 	if len(result.InnerIndices) == 0 {
-		result.CachedValue = ""
+		result.CachedValue = nil
 	}
 	return result
 }
 
 func main() {
-	filename := "combinations.yaml"
-	yamlFile, err := os.Open(filename)
+	flag.Parse()
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
+
+	yamlFile, err := os.Open(*filename)
 	if err != nil {
-		log.Fatalf("failed to open %s: %v", filename, err)
+		log.Fatalf("failed to open %s: %v", *filename, err)
 	}
 	defer yamlFile.Close()
 
@@ -189,11 +202,11 @@ func main() {
 
 	err = yaml.Unmarshal(yamlBytes, &input)
 	if err != nil {
-		log.Fatalf("failed to unmarshal: %s: %v", filename, err)
+		log.Fatalf("failed to unmarshal: %s: %v", *filename, err)
 	}
 
 	if len(input.KnownInners) == 0 {
-		log.Fatalf("no known techs provided in %s file", filename)
+		log.Fatalf("no known techs provided in %s file", *filename)
 	}
 
 	if len(input.KnownInners) > 21 {
@@ -204,10 +217,11 @@ func main() {
 		log.Fatalf("only max string of 127 chars can be computed by now")
 	}
 
-	for _, inner := range input.KnownInners {
-		if len(inner.V) > (1<<16)-1 {
+	for i := 0; i < len(input.KnownInners); i++ {
+		if len(input.KnownInners[i].V) > (1<<16)-1 {
 			log.Fatalf("inner to long for calculation")
 		}
+		input.KnownInners[i].Bytes = []byte(input.KnownInners[i].V)
 	}
 
 	log.Printf("input(%d): %v", len(input.KnownInners), input)
