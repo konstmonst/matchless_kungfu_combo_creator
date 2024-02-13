@@ -106,10 +106,10 @@ func (m *MergedInners) String(inners []Inner, wordSize int) string {
 
 	sb.WriteByte('\n')
 	for i, byte := range m.CachedValue {
-		sb.WriteByte(byte)
 		if i > 0 && i%wordSize == 0 {
-			sb.WriteRune(' ')
+			sb.WriteByte(' ')
 		}
+		sb.WriteByte(byte)
 	}
 
 	return sb.String()
