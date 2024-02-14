@@ -19,7 +19,6 @@ knownInners: [
 #  { id: MECH, v: "OOA", comment: "Mechanic: Lockpicking Speed", chiType: "M", chiValue: 1 },
 #  { id: WDH, v: "NOAOAON", comment: "Wu Dang Harmony: 3 less moves +10%DMG", chiType: "H", chiValue: 2 },
 #  { id: DB, v: "AAANNNOOO", comment: "Diamond Body: 10 stacks of shield", chiType: "H", chiValue: 2 },
-#  { id: AoD, v: "OAA", comment: "Art of Drunkness: inflict Drunk", chiType: "H", chiValue: 1 },
 #  { id: PSS, v: "OOOANO", comment: "Purple Seven Star: 1 stack Stars/Flowers", chiType: "S", chiValue: 2 },
   { id: PCQ, v: "AONNOA", comment: "Purple Cloud Qi: Sword +50%", chiType: "", chiValue: 0 },
 #  { id: TS, v: "ANNONA", comment: "Tranquility Spell: +5 Cold Stacks", chiType: "M", chiValue: 2 },
@@ -32,6 +31,7 @@ knownInners: [
 #  { id: LIH, v: "OOAN", comment: "Lotus in Heart", chiType: "", chiValue: 0 },
 #  { id: LIH, v: "OOAONO", comment: "Stars Divine", chiType: "", chiValue: 0 },
 # ----------- those are in True Method, so no point in including them ----- 
+# { id: AoD, v: "OAA", comment: "Art of Drunkness: inflict Drunk", chiType: "H", chiValue: 1 },
 # { id: BS , v: "OAN", comment: "Breathing Skill", chiType: "", chiValue: 0 },
 # { id: BP, v: "ANONA", comment: "Bionic Pentaform", chiType: "", chiValue: 0 },
 # { id: AoHB, v: "AANOA", comment: "Art of Hellish Breathing", chiType: "", chiValue: 0 },

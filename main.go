@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"runtime/pprof"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -23,26 +25,34 @@ var (
 	wordSize         = flag.Int("wordSize", 5, "max characters in a word wwhen splitting result string")
 )
 
-type Inner struct {
+type YamlInner struct {
 	ID       string `yaml:"id"`
 	V        string `yaml:"v"`
 	Comment  string `yaml:"comment"`
 	ChiType  string `yaml:"chiType"`
 	ChiValue int    `yaml:"chiValue"`
-	Bytes    []byte
+}
+
+type Inner struct {
+	ID        string
+	Comment   string
+	ChiType   string
+	ChiValue  int
+	Bytes     []byte // contets of V only as []byte to speed up processing
+	Contained *Inner
 }
 
 type MergedInners struct {
-	InnerIndices []int
-	MergePos     []int
-	CachedValue  []byte
+	InnerIndices []int  // indices of inners in the global array of inners
+	MergePos     []int  // position where a given inner was inserted in the CachedValue
+	CachedValue  []byte // the resulting merged string of inners
 }
 
 func (m *MergedInners) LastIndex() uint {
 	return uint(m.InnerIndices[len(m.InnerIndices)-1])
 }
 
-func (m *MergedInners) Merge(inners []Inner, index int) {
+func (m *MergedInners) Merge(inners []*Inner, index int) {
 	var (
 		pos   int
 		found bool
@@ -59,18 +69,22 @@ func (m *MergedInners) Merge(inners []Inner, index int) {
 		} else {
 			pos = calcMergePos(inners[m.LastIndex()].Bytes, inners[index].Bytes)
 		}
-		lenA := int(len(inners[m.LastIndex()].Bytes))
-		lenB := int(len(inners[index].Bytes))
+		lenA := len(inners[m.LastIndex()].Bytes)
+		lenB := len(inners[index].Bytes)
 		m.MergePos = append(m.MergePos, len(m.CachedValue)-lenA+pos)
+
+		// when we have abc and bcd, we only have to append d
+		// when we have abcd and bc, we don't have to append anything
 		if pos+lenB-1 > lenA {
 			m.CachedValue = append(m.CachedValue, inners[index].Bytes[lenA-pos:]...)
 		}
 
 	} else {
+		// preallocating slices to avoid reallocations
 		m.MergePos = make([]int, 0, len(inners))
 		m.MergePos = append(m.MergePos, 0)
 		m.InnerIndices = make([]int, 0, len(inners))
-		m.CachedValue = make([]byte, 0, 255)
+		m.CachedValue = make([]byte, 0, 255) // approximate size
 		m.CachedValue = append(m.CachedValue, inners[index].Bytes...)
 	}
 	m.InnerIndices = append(m.InnerIndices, index)
@@ -80,7 +94,9 @@ func (m *MergedInners) IsBetterThan(other *MergedInners) bool {
 	return len(m.CachedValue) < len(other.CachedValue)
 }
 
-func (m *MergedInners) String(inners []Inner, wordSize int) string {
+// converts merged inner to human possible respresentation, separating
+// each wordSize letters with space
+func (m *MergedInners) String(inners []*Inner, wordSize int) string {
 	chiValues := map[string]int{}
 	var sb strings.Builder
 	sb.WriteString("Inners: ")
@@ -117,9 +133,27 @@ func (m *MergedInners) String(inners []Inner, wordSize int) string {
 		j++
 	}
 
+	sb.WriteString("\nomitted inners (because they are part of other inners):\n")
+	first := true
+	for _, index := range m.InnerIndices {
+		parent := inners[index]
+		child := parent.Contained
+		for child != nil {
+			if !first {
+				sb.WriteString(", ")
+			}
+			sb.WriteString(fmt.Sprintf("%s is part of %s", child.ID, parent.ID))
+			parent = child
+			child = child.Contained
+			first = false
+		}
+	}
 	return sb.String()
 }
 
+// Calculate at witch position in slice b slice a can be inserted
+// If slice a doesn't contain the begining of b, the merge position is
+// at the end of slice a
 func calcMergePos(a, b []byte) int {
 	lenA := len(a)
 	lenB := len(b)
@@ -133,7 +167,7 @@ func calcMergePos(a, b []byte) int {
 		if j == lenB {
 			return mergeAt
 		}
-		// part of b at the end of a
+		// part of b is at the end of a
 		if mergeAt+j == lenA {
 			return mergeAt
 		}
@@ -155,7 +189,7 @@ func factorial(number uint64) uint64 {
 	return fact
 }
 
-func findSmallestCommonString(inners []Inner, maxResultSize int) MergedInners {
+func mergeInners(inners []*Inner, maxResultSize int) MergedInners {
 	var result MergedInners
 	numInners := len(inners)
 
@@ -187,6 +221,42 @@ func findSmallestCommonString(inners []Inner, maxResultSize int) MergedInners {
 	return result
 }
 
+func preprocess(inners []*Inner) []*Inner {
+	slices.SortFunc(inners, func(i, j *Inner) int {
+		x := len(i.Bytes) - len(j.Bytes)
+		if x < 0 {
+			return 1
+		} else if x > 0 {
+			return -1
+		}
+		return 0
+	})
+	newLen := len(inners)
+	for i := 0; i < len(inners); i++ {
+		if inners[i] != nil {
+			for j := i + 1; j < len(inners); j++ {
+				if inners[j] != nil && bytes.Contains(inners[i].Bytes, inners[j].Bytes) {
+					insertAt := inners[i]
+					for insertAt.Contained != nil && bytes.Contains(insertAt.Bytes, inners[j].Bytes) {
+						insertAt = insertAt.Contained
+					}
+					inners[j].Contained = insertAt.Contained
+					insertAt.Contained = inners[j]
+					inners[j] = nil
+					newLen--
+				}
+			}
+		}
+	}
+	result := make([]*Inner, 0, newLen)
+	for _, inner := range inners {
+		if inner != nil {
+			result = append(result, inner)
+		}
+	}
+	return result
+}
+
 func main() {
 	flag.Parse()
 	if *cpuprofile != "" {
@@ -209,8 +279,8 @@ func main() {
 	yamlBytes, _ := io.ReadAll(yamlFile)
 
 	var input struct {
-		MaxResultSize int     `yaml:"maxResultSize"`
-		KnownInners   []Inner `yaml:"knownInners"`
+		MaxResultSize int         `yaml:"maxResultSize"`
+		KnownInners   []YamlInner `yaml:"knownInners"`
 	}
 
 	err = yaml.Unmarshal(yamlBytes, &input)
@@ -230,16 +300,25 @@ func main() {
 		log.Fatalf("only max string of 127 chars can be computed by now")
 	}
 
+	inners := make([]*Inner, 0, len(input.KnownInners))
 	for i := 0; i < len(input.KnownInners); i++ {
 		if len(input.KnownInners[i].V) > (1<<16)-1 {
 			log.Fatalf("inner to long for calculation")
 		}
-		input.KnownInners[i].Bytes = []byte(input.KnownInners[i].V)
+		inners = append(inners, &Inner{
+			ID:       input.KnownInners[i].ID,
+			Comment:  input.KnownInners[i].Comment,
+			Bytes:    []byte(input.KnownInners[i].V),
+			ChiType:  input.KnownInners[i].ChiType,
+			ChiValue: input.KnownInners[i].ChiValue,
+		})
 	}
+
+	inners = preprocess(inners)
 
 	log.Printf("input(%d): %v", len(input.KnownInners), input)
 	startAt := time.Now()
-	result := findSmallestCommonString(input.KnownInners, int(input.MaxResultSize))
+	result := mergeInners(inners, int(input.MaxResultSize))
 	fmt.Printf("calculation took %v\n", time.Since(startAt))
-	fmt.Printf("result of size %d:\n%v\n", len(result.CachedValue), result.String(input.KnownInners, *wordSize))
+	fmt.Printf("result of size %d:\n%v\n", len(result.CachedValue), result.String(inners, *wordSize))
 }
