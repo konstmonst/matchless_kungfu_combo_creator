@@ -221,6 +221,9 @@ func mergeInners(inners []*Inner, maxResultSize int) MergedInners {
 	return result
 }
 
+// Puts inners, that are part of other inners in parent's Contained field
+// If there are multiple, they create a singly linked list with bigger
+// matches first
 func preprocess(inners []*Inner) []*Inner {
 	slices.SortFunc(inners, func(i, j *Inner) int {
 		x := len(i.Bytes) - len(j.Bytes)
