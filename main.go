@@ -18,6 +18,9 @@ import (
 )
 
 var (
+	// mergeCache maps 2 unique Inners to the previously calculated insertion offset (result of calcMergePos) between them
+	// since the list of inners does not change for the duration of the calculation, using indexes generates
+	// efficent keys. The keys are (indexA << 16 | indexB), so the maximum inner length is 65535
 	mergeCache       map[uint]int
 	enableMergeCache = flag.Bool("enableMergeCache", true, "enables merge cache")
 	cpuprofile       = flag.String("cpuprofile", "", "write cpu profile to file")
@@ -25,6 +28,7 @@ var (
 	wordSize         = flag.Int("wordSize", 5, "max characters in a word wwhen splitting result string")
 )
 
+// representation of inner in the yaml file
 type YamlInner struct {
 	ID       string `yaml:"id"`
 	V        string `yaml:"v"`
@@ -33,13 +37,14 @@ type YamlInner struct {
 	ChiValue int    `yaml:"chiValue"`
 }
 
+// Representation of an Inner used for calculation
 type Inner struct {
 	ID        string
 	Comment   string
 	ChiType   string
 	ChiValue  int
 	Bytes     []byte // contets of V only as []byte to speed up processing
-	Contained *Inner
+	Contained *Inner // singly linked list of "Bytes" field substrings, that could be trimmed from the original list
 }
 
 type MergedInners struct {
@@ -227,16 +232,18 @@ func mergeInners(inners []*Inner, maxResultSize int) MergedInners {
 // If there are multiple, they create a singly linked list with bigger
 // matches first
 func preprocess(inners []*Inner) []*Inner {
+	// sort by size because larger slices can contain smaller slices
+	// so that we then can iterate from longest to shortest inner
 	slices.SortFunc(inners, func(i, j *Inner) int {
 		x := len(i.Bytes) - len(j.Bytes)
 		if x < 0 {
-			return 1
+			return 1 // sort order: longer inner first
 		} else if x > 0 {
 			return -1
 		}
 		return 0
 	})
-	newLen := len(inners)
+	newLen := len(inners) // keep track of how much we remove to efficently reserve slice space later
 	for i := 0; i < len(inners); i++ {
 		if inners[i] != nil {
 			for j := i + 1; j < len(inners); j++ {
@@ -245,6 +252,7 @@ func preprocess(inners []*Inner) []*Inner {
 					for insertAt.Contained != nil && bytes.Contains(insertAt.Bytes, inners[j].Bytes) {
 						insertAt = insertAt.Contained
 					}
+					// move inners[j] to insertAt.Contained singly linked list
 					inners[j].Contained = insertAt.Contained
 					insertAt.Contained = inners[j]
 					inners[j] = nil
@@ -253,6 +261,12 @@ func preprocess(inners []*Inner) []*Inner {
 			}
 		}
 	}
+	// if inners were no moved then we don't have to filter out nils
+	// and can just return sorted slice
+	if newLen == len(inners) {
+		return inners
+	}
+	// removing nils (moved inners) from the list
 	result := make([]*Inner, 0, newLen)
 	for _, inner := range inners {
 		if inner != nil {
