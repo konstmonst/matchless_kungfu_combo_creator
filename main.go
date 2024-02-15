@@ -71,11 +71,13 @@ func (m *MergedInners) Merge(inners []*Inner, index int) {
 		}
 		lenA := len(inners[m.LastIndex()].Bytes)
 		lenB := len(inners[index].Bytes)
-		m.MergePos = append(m.MergePos, len(m.CachedValue)-lenA+pos)
+		mergePos := len(m.CachedValue) - lenA + pos
+		m.MergePos = append(m.MergePos, mergePos)
 
 		// when we have abc and bcd, we only have to append d
 		// when we have abcd and bc, we don't have to append anything
-		if pos+lenB-1 > lenA {
+		// if mergePos+lenB > len(m.CachedValue) {
+		if lenA-pos < lenB {
 			m.CachedValue = append(m.CachedValue, inners[index].Bytes[lenA-pos:]...)
 		}
 

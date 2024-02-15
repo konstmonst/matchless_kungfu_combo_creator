@@ -37,6 +37,12 @@ func TestCalcMergePos(t *testing.T) {
 			b:        "bcd",
 			expected: 1,
 		},
+		{
+			name:     "bug1",
+			a:        "ONAOOA",
+			b:        "NAOOAN",
+			expected: 1,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -48,9 +54,11 @@ func TestCalcMergePos(t *testing.T) {
 }
 
 func TestMergeInners(t *testing.T) {
-	techABC := &Inner{Bytes: []byte("abc")}
-	techDEFG := &Inner{Bytes: []byte("defg")}
-	techHI := &Inner{Bytes: []byte("hi")}
+	innerABC := &Inner{Bytes: []byte("abc")}
+	innerDEFG := &Inner{Bytes: []byte("defg")}
+	innerHI := &Inner{Bytes: []byte("hi")}
+	innerNAOOAN := &Inner{Bytes: []byte("NAOOAN")}
+	innerONAOOA := &Inner{Bytes: []byte("ONAOOA")}
 
 	testCases := []struct {
 		name     string
@@ -59,14 +67,24 @@ func TestMergeInners(t *testing.T) {
 		expected MergedInners
 	}{
 		{
+			name:     "bug1",
+			input:    []*Inner{innerNAOOAN, innerONAOOA},
+			maxChars: 20,
+			expected: MergedInners{
+				InnerIndices: []int{1, 0},
+				MergePos:     []int{0, 1},
+				CachedValue:  []byte("ONAOOAN"),
+			},
+		},
+		{
 			name:     "no combinations",
-			input:    []*Inner{techABC, techDEFG, techHI},
+			input:    []*Inner{innerABC, innerDEFG, innerHI},
 			maxChars: 6,
 			expected: MergedInners{},
 		},
 		{
 			name:     "nothing is in common",
-			input:    []*Inner{techABC, techDEFG, techHI},
+			input:    []*Inner{innerABC, innerDEFG, innerHI},
 			maxChars: 20,
 			expected: MergedInners{
 				InnerIndices: []int{0, 1, 2},
@@ -76,12 +94,12 @@ func TestMergeInners(t *testing.T) {
 		},
 		{
 			name:     "same",
-			input:    []*Inner{techABC, techABC, techABC},
+			input:    []*Inner{innerABC, innerABC, innerABC},
 			maxChars: 20,
 			expected: MergedInners{
 				InnerIndices: []int{0, 1, 2},
 				MergePos:     []int{0, 0, 0},
-				CachedValue:  techABC.Bytes,
+				CachedValue:  innerABC.Bytes,
 			},
 		},
 	}
